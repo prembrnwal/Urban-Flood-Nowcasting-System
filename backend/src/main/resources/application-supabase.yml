@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: urban-flood-nowcasting
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres.osxanbafhhahgdrovxne}
+    password: ${SPRING_DATASOURCE_PASSWORD:p1r2e3m@123}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      idle-timeout: 30000
+      max-lifetime: 600000
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data.sql
+
+server:
+  port: 8081
+
+logging:
+  level:
+    com.floodnowcast: INFO
+    org.hibernate.SQL: WARN
