@@ -120,27 +120,28 @@ export default function FloodMap({
         }
       }
 
-      // 2. Draw Circles: Red/Orange for Flooded Zones AND Vibrant Green for High-Ground Safe Zones (shown during/after demo run)
-      const isFlooded = (zone.waterDepthCm && zone.waterDepthCm >= 8.0) || 
+      // 2. Draw Circles: Red/Orange/Purple for Flooded Zones AND Vibrant Green for High-Ground Safe Zones (shown during/after demo run)
+      const isFlooded = (zone.waterDepthCm && zone.waterDepthCm >= 3.0) || 
+                        zone.riskLevel === 'LOW' || 
                         zone.riskLevel === 'MODERATE' || 
                         zone.riskLevel === 'HIGH' || 
                         zone.riskLevel === 'CRITICAL';
 
-      const isSafeZone = forecastMinute > 0 && zone.riskLevel === 'SAFE' && zone.elevation >= 18.0;
+      const isSafeZone = forecastMinute > 0 && !isFlooded && (zone.riskLevel === 'SAFE' || zone.elevation >= 14.0);
 
       if (isFlooded || isSafeZone) {
         const circleColor = isFlooded ? color : '#22c55e';
         const circleFill = isFlooded ? fill : '#4ade80';
         const radius = isFlooded 
-          ? Math.max(50, Math.min(350, (zone.waterDepthCm || 0) * 6.0 + 30))
-          : Math.max(90, Math.min(180, (zone.elevation || 20) * 4));
+          ? Math.max(70, Math.min(380, (zone.waterDepthCm || 5) * 5.5 + 40))
+          : Math.max(110, Math.min(240, (zone.elevation || 18) * 6));
 
         const circle = L.circle([zone.latitude, zone.longitude], {
           radius,
           color: circleColor,
           fillColor: circleFill,
-          fillOpacity: isFlooded ? 0.70 : 0.35,
-          weight: isFlooded ? ((zone.riskLevel === 'HIGH' || zone.riskLevel === 'CRITICAL') ? 3 : 1.5) : 2,
+          fillOpacity: isFlooded ? 0.65 : 0.40,
+          weight: isFlooded ? ((zone.riskLevel === 'HIGH' || zone.riskLevel === 'CRITICAL') ? 3 : 2) : 2.5,
           dashArray: isSafeZone ? '6, 6' : undefined,
         });
 
@@ -153,9 +154,9 @@ export default function FloodMap({
               <div style="color:#94a3b8">Water Depth:</div>
               <div style="color:${circleColor};font-weight:800;font-size:13px">${zone.waterDepthCm?.toFixed(1) ?? '0.0'} cm</div>
               <div style="color:#94a3b8">Risk Status:</div>
-              <div style="color:${circleColor};font-weight:800">${isSafeZone ? '🟢 SAFE (100% FLOOD FREE)' : zone.riskLevel}</div>
+              <div style="color:${circleColor};font-weight:800">${isSafeZone ? '🟢 SAFE (FLOOD FREE)' : zone.riskLevel}</div>
               <div style="color:#94a3b8">Elevation:</div>
-              <div style="color:#38bdf8;font-weight:800">${zone.elevation?.toFixed(1) ?? '—'} m (High Ground)</div>
+              <div style="color:#38bdf8;font-weight:800">${zone.elevation?.toFixed(1) ?? '—'} m</div>
             </div>
           </div>
         `;
@@ -169,16 +170,16 @@ export default function FloodMap({
       if (zone.riskLevel === 'CRITICAL' || zone.riskLevel === 'HIGH') {
         const pulseIcon = L.divIcon({
           className: '',
-          html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};
-            box-shadow:0 0 0 0 ${color};animation:pulse-map 1.5s infinite;position:relative"></div>`,
-          iconSize: [14, 14],
-          iconAnchor: [7, 7],
+          html: `<div style="width:16px;height:16px;border-radius:50%;background:${color};
+            box-shadow:0 0 10px ${color};animation:pulse-map 1.5s infinite;position:relative"></div>`,
+          iconSize: [16, 16],
+          iconAnchor: [8, 8],
         });
         L.marker([zone.latitude, zone.longitude], { icon: pulseIcon, interactive: false })
           .addTo(floodLayerRef.current!);
       }
     });
-  }, [floodZones, layers.floodRisk, layers.floodedRoads]);
+  }, [floodZones, layers.floodRisk, layers.floodedRoads, forecastMinute]);
 
   // Drainage network layer
   useEffect(() => {

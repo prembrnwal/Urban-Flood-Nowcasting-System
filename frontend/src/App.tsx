@@ -175,6 +175,13 @@ export default function App() {
   const applyDemoStage = useCallback(async (rainfall: number, blockage: number, minute: number) => {
     setCurrentRainfall(rainfall);
     setForecastMinute(minute);
+    // Ensure flood risk, flooded roads, and safe route layers are enabled so circles & polylines display
+    setLayers(prev => ({
+      ...prev,
+      floodRisk: true,
+      floodedRoads: true,
+      safeRoute: true,
+    }));
     try {
       await rainfallApi.setIntensity(rainfall);
       await floodApi.updateParams(blockage, 85);
