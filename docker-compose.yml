@@ -1,0 +1,60 @@
+version: '3.9'
+
+services:
+  # ── PostgreSQL with PostGIS ─────────────────────────────────
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: flood_postgres
+    environment:
+      POSTGRES_DB: flood_nowcast
+      POSTGRES_USER: flooduser
+      POSTGRES_PASSWORD: floodpass123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flooduser -d flood_nowcast"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Spring Boot Backend ─────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: flood_backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/flood_nowcast
+      SPRING_DATASOURCE_USERNAME: flooduser
+      SPRING_DATASOURCE_PASSWORD: floodpass123
+      SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
+      SPRING_SQL_INIT_MODE: always
+      DEMO_MODE: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── React Frontend ──────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: flood_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    environment:
+      VITE_API_BASE_URL: ""
+
+volumes:
+  postgres_data:
